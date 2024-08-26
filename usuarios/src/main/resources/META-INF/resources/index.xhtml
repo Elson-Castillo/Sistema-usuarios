@@ -1,0 +1,195 @@
+<!DOCTYPE html >
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="http://xmlns.jcp.org/jsf/html"
+      xmlns:p="http://primefaces.org/ui"
+      xmlns:f="http://xmlns.jcp.org/jsf/core">
+
+<h:head>
+    <title>Gestion de usuarios</title>
+    <link rel="stylesheet" href="https://unpkg.com/primeflex@^3/primeflex.css"/>
+    <style>
+        body {
+            background-color: #1a1f2b; /* Fondo negro azulado */
+            color: #ffffff; /* Texto blanco */
+            font-family: 'Arial', sans-serif;
+        }
+
+        h3 {
+            color: #FFFFFF; /* Título blanco */
+        }
+    </style>
+</h:head>
+<h:body>
+    <div class="card">
+      <h:form id="forma-user">
+          <p:growl id="mensajes" showDetail="true"/>
+
+          <div class="card">
+              <div class="flex justify-content-center flex-wrap card-container">
+                  <h3>Sistema de Gestión de Usuarios</h3>
+              </div>
+              <p:menubar>
+                  <p:menuitem value="Tablero usuarios" icon="pi pi-fw pi-user"
+                              update=":forma-user:user-tabla"
+                              actionListener="#{indexControlador.cargarDatos}"/>
+
+                  <p:menuitem value="Gestión usuarios" icon="pi pi-fw pi-plus"
+                              update=":forma-modal:user-ventana"
+                              actionListener="#{indexControlador.agregarUsuario}"
+                              oncomplete="PF('ventanaModalUser').show();"/>
+              </p:menubar>
+          </div>
+
+
+          <!-- Sección de Estado de Usuarios -->
+          <div style="display: flex; gap: 10px; justify-content: center;">
+              <!-- Botón de Activos -->
+              <p:commandButton value="ACTIVOS"
+                               style="background-color: #66BB6A; color: white; font-weight: bold; width: 13%;"
+                               actionListener="#{indexControlador.cambiarEstadoUsuario('A')}"
+                               update="user-tabla"/>
+              <!-- Botón de Inactivos -->
+              <p:commandButton value="INACTIVOS"
+                               style="background-color: #9E9E9E; color: white; font-weight: bold; width: 13%;"
+                               actionListener="#{indexControlador.cambiarEstadoUsuario('B')}"
+                               update="user-tabla"/>
+              <!-- Botón de Revocados -->
+              <p:commandButton value="REVOCADOS"
+                               style="background-color: #FF7043; color: white; font-weight: bold; width: 13%;"
+                               actionListener="#{indexControlador.cambiarEstadoUsuario('R')}"
+                               update="user-tabla"
+              />
+          </div>
+
+          <div class="card">
+            <p:dataTable value="#{indexControlador.usuarios}" var="user" id="user-tabla"
+             widgetVar="userTabla" paginator="true" rows="5" rowsPerPageTemplate="5,10,15,20"
+                         paginatorPosition="bottom" paginatorTemplate="{CurrentPageReport}  {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}">
+                <f:facet name="header">
+                    <div class="flex justify-content-center flex-wrap card-container">
+                            <h3>Tabla usuarios</h3>
+                    </div>
+                </f:facet>
+                <p:column headerText="NO_REGISTRO" filterBy="#{user.numRegistro}" filterStyle="width:150px;"
+                          filterMatchMode="exact" >
+                    <h:outputText value="#{user.numRegistro}"/>
+                </p:column>
+
+               <p:column headerText="ID_USUARIO" filterBy="#{user.login}" filterStyle="width:150px;"
+                         filterMatchMode="contains">
+                   <h:outputText value="#{user.login}"/>
+               </p:column>
+
+                <p:column headerText="NOMBRE" filterBy="#{user.nombre}" filterStyle="width:150px;"
+                          filterMatchMode="contains">
+                    <h:outputText value="#{user.nombre}"/>
+                </p:column>
+
+                <p:column headerText="FECHA_ALTA" filterBy="#{user.fechaAlta}" filterStyle="width:150px;"
+                          filterMatchMode="exact">
+                    <h:outputText value="#{user.fechaAlta}"/>
+                </p:column>
+
+                <p:column headerText="STATUS" filterBy="#{user.status}" filterStyle="width:150px;"
+                          filterMatchMode="contains">
+                    <h:outputText value="#{user.status}"/>
+                </p:column>
+
+                <p:column headerText="OPCIONES">
+                        <p:commandButton value="Editar" icon="pi pi-pencil"
+                        update="forma-modal:user-ventana"
+                        oncomplete="PF('ventanaModalUser').show();"
+                        process="@this"
+                        class="ui-button-primary"
+                        style="margin-right: .5rem"
+                        actionListener="#{indexControlador.prepararEdicion}">
+                            <f:setPropertyActionListener target="#{indexControlador.usuarioSeleccionado}" value="#{user}"/>
+                          <p:resetInput target="forma-modal:user-ventana"/>
+                        </p:commandButton>
+
+                        <p:commandButton value="Eliminar"
+                                         icon="pi pi-trash"
+                                         styleClass="ui-button-danger"
+                                         process="@this"
+                                         oncomplete="PF('eliminarUsuarioVentana').show();">
+                            <f:setPropertyActionListener target="#{indexControlador.usuarioSeleccionado}" value="#{user}"/>
+                        </p:commandButton>
+                </p:column>
+
+            </p:dataTable>
+        </div>
+      </h:form>
+
+        <h:form id="forma-modal">
+            <p:dialog header="Detalles usuario" showEffect="fade"
+                      modal="true" widgetVar="ventanaModalUser"
+                      responsive="true">
+                <p:outputPanel id="user-ventana" class="ui-fluid" style="max-height: 450px; overflow-y: auto;">
+                    <div class="field">
+                        <p:outputLabel for="login">ID_LOGIN</p:outputLabel>
+                        <p:inputText id="login" value="#{indexControlador.usuarioSeleccionado.login}" 
+                                     required="true" maxlength="20" disabled="#{!indexControlador.editableLogin}" />
+                    </div>
+
+                    <div class="field">
+                        <p:outputLabel for="contra">PASSWORD</p:outputLabel>
+                        <p:password id="contra" value="#{indexControlador.usuarioSeleccionado.password}" required="true" maxlength="30"/>
+                    </div>
+
+                    <div class="field">
+                        <p:outputLabel for="nombre">NOMBRE</p:outputLabel>
+                        <p:inputText id="nombre" value="#{indexControlador.usuarioSeleccionado.nombre}" required="true" maxlength="50"/>
+                    </div>
+
+                    <div class="field">
+                        <p:outputLabel for="paterno">APELLIDO PATERNO</p:outputLabel>
+                        <p:inputText id="paterno" value="#{indexControlador.usuarioSeleccionado.apellidoPaterno}" maxlength="50"/>
+                    </div>
+
+                    <div class="field">
+                        <p:outputLabel for="materno">APELLIDO MATERNO</p:outputLabel>
+                        <p:inputText id="materno" value="#{indexControlador.usuarioSeleccionado.apellidoMaterno}" maxlength="50"/>
+                    </div>
+
+                    <div class="field">
+                        <p:outputLabel for="tipoStatus">Status</p:outputLabel>
+                        <p:selectOneMenu id="tipoStatus" value="#{indexControlador.usuarioSeleccionado.status}" required="true">
+                            <f:selectItem itemLabel="Selecciona" itemValue=""/>
+                            <f:selectItem itemLabel="Activo" itemValue="A"/>
+                            <f:selectItem itemLabel="Inactivo" itemValue="B"/>
+                            <f:selectItem itemLabel="Revocado" itemValue="R"/>
+                        </p:selectOneMenu>
+                    </div>
+
+                    <div class="field">
+                        <p:outputLabel for="fechaVigencia">Fecha de Vigencia</p:outputLabel>
+                        <p:datePicker id="fechaVigencia"
+                                      value="#{indexControlador.usuarioSeleccionado.fechaVigencia}"
+                                      pattern="yyyy-MM-dd"
+                                      required="true"/>
+                    </div>
+
+                </p:outputPanel>
+
+                <f:facet name="footer">
+                    <p:commandButton value="Guardar" icon="pi pi-check"
+                                     process="user-ventana @this"
+                                     actionListener="#{indexControlador.guardarUsuario}"
+                                     update=":forma-modal:user-ventana" />
+
+                    <p:commandButton value="Cancelar" icon="pi pi-times"
+                                     onclick="PF('ventanaModalUser').hide();"
+                                     class="ui-button-secondary" type="button" />
+                </f:facet>
+            </p:dialog>
+
+            <p:confirmDialog widgetVar="eliminarUsuarioVentana" showEffect="fade" width="300" message="¿Desea eliminar este usuario?" header="Confirmar" severity="warn">
+                <p:commandButton value="Si" icon="pi pi-check" actionListener="#{indexControlador.eliminarCuenta}" process="@this" oncomplete="PF('eliminarUsuarioVentana').hide();"/>
+                <p:commandButton value="No" type="button" styleClass="ui-button-secondary" icon="pi pi-times" onclick="PF('eliminarUsuarioVentana').hide();"/>
+            </p:confirmDialog>
+
+        </h:form>
+
+    </div>
+</h:body>
+</html>
